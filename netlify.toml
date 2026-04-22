@@ -1,0 +1,8 @@
+[build]
+command = "bundle exec jekyll build"
+publish = "_site"
+
+[dev]
+command = "bundle exec jekyll serve --watch --port 4000"
+targetPort = 4000 
+publish = "_site"
