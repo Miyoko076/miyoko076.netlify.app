@@ -2,10 +2,10 @@
 title: "🌸🐳 \  HynDuf \  👋"
 SEOTitle: HynDuf Blog
 header-img: img/hollow-knight.png
-email: hynduf@gmail.com
+email: miyoko076@inbox.lv
 description: "May it get me? 🌸"
 keyword: "hynduf, @hynduf, HynDuf's Blog, CP, Arch Linux, Obsidian"
-url: "https://hynduf.github.io" # your host, for absolute URL
+url: "https://miyoko076.netlify.app"
 baseurl: "" # for example, '/blog' if your blog hosted on 'host/blog'
 
 # Publish posts or collection documents with a future date.
@@ -13,13 +13,13 @@ future: true
 
 # SNS settings
 RSS: false
-github_username: hynduf
-twitter_username: HynDuf
-facebook_username: HynDuf
-linkedin_username: hynduf
+github_username: miyoko076
+# twitter_username:
+# facebook_username:
+# linkedin_username:
 
 # Build settings
-# from 2016, 'pygments' is unsupported on GitHub Pages. Use 'rouge' for highlighting instead.
+timezone: Asia/Seoul
 highlighter: rouge
 permalink: pretty
 paginate: 10
@@ -30,21 +30,14 @@ exclude:
     "Gruntfile.js",
     "package.json",
     "README.md",
-    "README.zh.md",
   ]
-anchorjs: true # if you want to customize anchor. check out line:181 of `post.html`
-# If you have timezone issue (e.g. #68) in China, uncomment to use this:
-#timezone: CN
+# if you want to customize anchor. check out line:181 of `post.html`
+anchorjs: true
 
 # Gems
-# from PR#40, to support local preview for Jekyll 3.0
-# make sure you have this gem installed
-# `$ gem install jekyll-paginate`
 plugins: [jekyll-paginate]
 
 # Markdown settings
-# replace redcarpet to kramdown,
-# although redcarpet can auto highlight code, the lack of header-id make the catalog impossible, so I switch to kramdown
 # document: http://jekyllrb.com/docs/configuration/#kramdown
 markdown: kramdown
 kramdown:
@@ -57,38 +50,34 @@ kramdown:
       start_line: 1
 
 # Disqus settings
-# disqus_username: hynduf
+# disqus_username:
 
 # Netease settings
 netease_comment: false
 
 # Analytics settings
-# Baidu Analytics
-# ba_track_id: [your track id]
-
-# Google Analytics
-ga_track_id: "UA-49627206-1" # Format: UA-xxxxxx-xx
-ga_domain: huangxuan.me
+# ga_track_id: # Format: UA-xxxxxx-xx
+# ga_domain:
 
 # Sidebar settings
-sidebar: true # whether or not using Sidebar.
+sidebar: true
 sidebar-about-description: "how far down the <br/> rabbit holes 🐇, <br/> would it take me? 🤔"
-sidebar-avatar: https://github.com/hynduf.png # use absolute URL, seeing it's used in both `/` and `/about/`
+sidebar-avatar: https://github.com/Miyoko076.png
 
 # Featured Tags
-featured-tags: true # whether or not using Feature-Tags
-featured-condition-size: 0 # A tag will be featured if the size of it is more than this condition value
+featured-tags: true
+featured-condition-size: 0
 
 # Progressive Web Apps
 chrome-tab-theme-color: "#000000"
 service-worker: true
 
-# MathJax rendering for layout:page (e.g. post preview)
+# MathJax rendering for layout:page
 page-mathjax: false
 
 # Friends
 friends:
-  [
-    { title: "Trí Phan", href: "https://triphan2k3.github.io/" },
-    { title: "Vanhger", href: "https://vanhger.github.io/" },
-  ]
+#   [
+#     { title: "Vanhger", href: "https://vanhger.github.io/" },
+#   ]
+
