@@ -39,6 +39,8 @@ $(document).ready(function() {
     $('iframe[src*="youtube.com"]').addClass('embed-responsive-item');
     $('iframe[src*="vimeo.com"]').wrap('<div class="embed-responsive embed-responsive-16by9"></div>');
     $('iframe[src*="vimeo.com"]').addClass('embed-responsive-item');
+    $('video').wrap('<div class="embed-responsive embed-responsive-16by9"></div>');
+    $('video').addClass('embed-responsive-item');
 });
 
 // Navigation Scripts to Show Header on Scroll-Up
