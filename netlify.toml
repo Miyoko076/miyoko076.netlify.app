@@ -1,0 +1,10 @@
+[build]
+command = "bundle exec jekyll build"
+publish = "_site"
+
+[build.environment]
+JEKYLL_ENV = "production"
+
+[dev]
+command = "bundle exec jekyll serve --port 4000"
+publish = "_site"
