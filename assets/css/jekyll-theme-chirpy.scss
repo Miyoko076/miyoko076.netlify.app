@@ -1,0 +1,55 @@
+---
+---
+
+@use 'abstracts/variables' with (
+  $theme: '{{ site.theme_mode }}'
+);
+
+/* prettier-ignore */
+@use 'main
+{%- if jekyll.environment == 'production' -%}
+  .bundle
+{%- endif -%}
+';
+
+/* append your custom style below */
+
+/* ============================================================
+   좌측 사이드바 제거 (프로필 + 좌측 네비게이션)
+   ------------------------------------------------------------
+   원래 Chirpy는 #main-wrapper 에 margin-left:260px 를 주어
+   "사이드바를 뺀 나머지 공간"을 만들고, 그 안에서 .container 를
+   justify-content:center 로 중앙 정렬한다.
+   사이드바를 없애면서 margin-left 만 0 으로 만들면, .container 에
+   xxxl(1650px) 미만에서 max-width 가 없어 좌측으로 쏠린다.
+   => margin-left 를 없애는 동시에 .container 에 max-width + auto
+      마진을 직접 부여해 모든 폭에서 중앙 정렬을 유지한다.
+   ============================================================ */
+
+/* 1) 좌측 사이드바 자체 숨김 */
+#sidebar {
+  display: none !important;
+}
+
+/* 2) 모바일 상단 햄버거(사이드바 토글) 버튼 숨김
+   -----------------------------------------------------------
+   display:none 으로 없애면 #topbar-title(`포스트`)의 좌측을
+   받쳐주던 버튼 폭이 사라져 title 이 왼쪽으로 쏠린다.
+   (title 은 양옆 요소 사이에서 width:70% 로 가운데 정렬되는데,
+    좌측 균형추가 없어지기 때문)
+   => visibility:hidden 으로 버튼 자리는 남기고 보이지만 않게 하여
+      기존의 가운데 정렬을 그대로 유지한다. */
+#sidebar-trigger {
+  visibility: hidden !important;
+}
+
+/* 3) 사이드바 폭 offset 제거 + 본문 컨테이너 중앙 정렬 복구 */
+#main-wrapper {
+  margin-left: 0 !important;
+
+  > .container {
+    max-width: 1250px; /* Chirpy $main-content-max-width 와 동일 값 */
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
