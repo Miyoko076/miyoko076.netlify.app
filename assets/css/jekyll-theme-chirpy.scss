@@ -53,3 +53,92 @@
     margin-right: auto !important;
   }
 }
+
+/* ============================================================
+   Hux 스타일 헤더(topbar) 3상태 — 스크롤 방향 반응 (겹침 방식)
+   ------------------------------------------------------------
+   [설계]
+   - 헤더 자체 height 는 $topbar-height(48px) 고정.
+   - 헤더는 sticky top:0 을 기본으로, translateY 로 여닫는다.
+       기본/등장:  translateY(0)      — 제자리(보임)
+       숨김:       translateY(-100%)  — 자기 높이만큼 위로(사라짐)
+   - 착시(헤더<->TOC 겹침)를 위해 헤더 z-index 를 TOC 보다 높게 둔다.
+   - JS(hux-scroll.js applyHeader)가 body 에 상태 클래스를 토글한다:
+       .hux-hidden   → 헤더 숨김(translateY(-100%))
+       .hux-visible  → 헤더 등장(translateY(0), 배경/그림자)
+     (클래스가 없으면 = 최상단 기본 상태)
+
+   [조정 포인트] 아래 변수들이 사용자가 렌더 보며 만질 값.
+   ============================================================ */
+
+/* --- 조정용 변수 (렌더 후 튜닝) --- */
+:root {
+  --hux-topbar-h: 3rem;          /* 헤더 높이 = Chirpy $topbar-height(48px) */
+  --hux-header-z: 1050;          /* 헤더 z-index (TOC 보다 높아야 겹침 위로 옴) */
+  --hux-header-anim: 0.3s ease;  /* 여닫기 트랜지션 (Hux 는 0.3s) */
+}
+
+/* xl(1200) 이상에서만 이 동작을 적용 (그 미만은 Chirpy 기본 유지) */
+@media (min-width: 1200px) {
+
+  /* [레이아웃 기준] .container 를 absolute 헤더의 기준점으로 삼고,
+     헤더가 흐름 밖으로 나가면서 생기는 빈자리(헤더높이)를 padding-top 으로
+     "항상" 확보한다. => 헤더가 FLOW/HIDDEN/VISIBLE 어디로 바뀌든 흐름 변화가
+     없어 본문이 위로 점프하지 않는다. (Hux 도 헤더는 흐름 밖 absolute 였다) */
+  #main-wrapper > .container {
+    position: relative;
+    padding-top: var(--hux-topbar-h);
+  }
+
+  /* [기본 상태 FLOW] 클래스 없음 — position: absolute
+     Hux navbar-custom 기본(absolute; 스크롤하면 본문따라 사라짐)과 동일.
+     흐름 밖이라 본문을 밀지 않고, .container(relative) 최상단에 얹혀
+     스크롤하면 문서와 함께 위로 사라진다.
+     ★ 폭: absolute 기준이 .container(1250px)라 그대로 두면 좌우 여백이 생긴다.
+       100vw breakout 으로 폭만 뷰포트 전체로 확장한다. (container 안에 있어
+       스크롤 따라 사라지는 성질은 유지) */
+  #topbar-wrapper {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 100vw;
+    margin-left: -50vw;
+    height: var(--hux-topbar-h);
+    will-change: transform;
+  }
+
+  /* [숨김 / 등장 공통] position: fixed 로 전환 (화면 기준 고정)
+     ★ 숨김 "위치"는 top(음수)으로, 여닫기는 transform 으로 분리.
+       - top: -헤더높이 → 화면 위 밖(숨김 기본 위치)
+       - transform: translateY() → 등장/사라짐 토글 (이 transform 에만 transition)
+       => 첫 숨김(translateY 0)은 transform 변화 없어 즉시,
+          등장/재사라짐(translateY 토글)은 부드럽게.
+     폭: 배경·내용 모두 뷰포트 전체 폭(left:0~right:0, width:100%).
+         중앙 정렬(max-width/margin auto) 없음 → 좌우 여백이 비지 않는다. */
+  body.hux-hidden #topbar-wrapper,
+  body.hux-visible #topbar-wrapper {
+    position: fixed;
+    top: calc(-1 * var(--hux-topbar-h));
+    left: 0;
+    right: 0;
+    width: 100%;
+    /* FLOW 상태의 breakout 마진(-50vw)을 리셋. fixed 는 left:0 만으로 충분하며
+       마진이 남아 있으면 topbar 가 왼쪽으로 밀려난다. */
+    margin-left: 0;
+    height: var(--hux-topbar-h);
+    z-index: var(--hux-header-z);
+    background-color: var(--topbar-bg);
+    transition: transform var(--hux-header-anim);
+  }
+
+  /* [숨김] translateY(0) = top 음수 위치 그대로 = 화면 밖 (즉시) */
+  body.hux-hidden #topbar-wrapper {
+    transform: translateY(0);
+  }
+
+  /* [등장] translateY(100%) = 아래로 내려와 top:0 위치에 나타남 (부드럽게) */
+  body.hux-visible #topbar-wrapper {
+    transform: translateY(100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+}
