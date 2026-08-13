@@ -1,0 +1,105 @@
+---
+layout: compress
+---
+
+<!doctype html>
+
+{% include origin-type.html %}
+
+{% include lang.html %}
+
+<!-- `site.alt_lang` can specify a language different from the UI -->
+<html
+  lang="{{ page.lang | default: site.alt_lang | default: site.lang }}"
+  {%- if site.theme_mode == 'light' or site.theme_mode == 'dark' -%}
+    data-bs-theme="{{ site.theme_mode }}"
+  {%- endif -%}
+>
+  {% include head.html lang=lang %}
+
+  <body>
+    {% include sidebar.html lang=lang %}
+
+    {%- comment -%}
+      히어로가 있으면 has-hero 클래스를 붙여, CSS 에서 topbar 뒤(y=0)까지
+      히어로 이미지가 깔리도록(padding-top 제거 + 히어로 끌어올림) 처리한다.
+    {%- endcomment -%}
+    {% assign _has_hero = false %}
+    {% if page.layout == 'post' and page.header-img %}
+      {% assign _has_hero = true %}
+    {% endif %}
+
+    <div id="main-wrapper" class="d-flex justify-content-center{% if _has_hero %} has-hero{% endif %}">
+      <div class="container d-flex flex-column px-xxl-5">
+        {% include topbar.html lang=lang %}
+
+        {%- comment -%}
+          Hux 스타일 히어로 헤더 — post 레이아웃 + header-img 있을 때만.
+          main 컬럼(col-xl-9) 밖, .container 직속(row 앞)에 두어야
+          breakout(전체폭)이 좌우 대칭이 된다.
+        {%- endcomment -%}
+        {% if _has_hero %}
+          {% include hero-header.html lang=lang %}
+        {% endif %}
+
+        <div class="row flex-grow-1">
+          <main aria-label="Main Content" class="col-12 col-lg-11 col-xl-9 px-md-4">
+            {% if layout.layout == 'default' %}
+              {% include refactor-content.html content=content lang=lang %}
+            {% else %}
+              {{ content }}
+            {% endif %}
+          </main>
+
+          <!-- panel -->
+          <aside aria-label="Panel" id="panel-wrapper" class="col-xl-3 ps-2 text-muted">
+            <div class="access">
+              {% include_cached update-list.html lang=lang %}
+              {% include_cached trending-tags.html lang=lang %}
+            </div>
+
+            {% for _include in layout.panel_includes %}
+              {% assign _include_path = _include | append: '.html' %}
+              {% include {{ _include_path }} lang=lang %}
+            {% endfor %}
+          </aside>
+        </div>
+
+        <div class="row">
+          <!-- tail -->
+          <div id="tail-wrapper" class="col-12 col-lg-11 col-xl-9 px-md-4">
+            {% for _include in layout.tail_includes %}
+              {% assign _include_path = _include | append: '.html' %}
+              {% include {{ _include_path }} lang=lang %}
+            {% endfor %}
+
+            {% include_cached footer.html lang=lang %}
+          </div>
+        </div>
+
+        {% include_cached search-results.html lang=lang %}
+      </div>
+
+      <aside aria-label="Scroll to Top">
+        <button id="back-to-top" type="button" class="btn btn-lg btn-box-shadow">
+          <i class="fas fa-angle-up"></i>
+        </button>
+      </aside>
+    </div>
+
+    <div id="mask" class="d-none position-fixed w-100 h-100 z-1"></div>
+
+    {% if site.pwa.enabled %}
+      {% include_cached notification.html lang=lang %}
+    {% endif %}
+
+    <!-- Embedded scripts -->
+
+    {% for _include in layout.script_includes %}
+      {% assign _include_path = _include | append: '.html' %}
+      {% include {{ _include_path }} %}
+    {% endfor %}
+
+    {% include_cached search-loader.html lang=lang %}
+  </body>
+</html>

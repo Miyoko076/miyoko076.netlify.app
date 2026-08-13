@@ -90,6 +90,17 @@
     padding-top: var(--hux-topbar-h);
   }
 
+  /* [히어로가 있을 때] topbar 뒤(y=0)까지 히어로 이미지가 깔리도록:
+     - .container 의 상단 자리확보 padding 제거
+     - 히어로를 topbar 높이만큼 위로 끌어올려 y=0 부터 시작
+     => topbar 가 히어로 이미지 위에 겹쳐진다. (Hux 의 navbar-over-banner 구조) */
+  #main-wrapper.has-hero > .container {
+    padding-top: 0;
+  }
+  #main-wrapper.has-hero .hux-hero {
+    margin-top: calc(-1 * var(--hux-topbar-h));
+  }
+
   /* [기본 상태 FLOW] 클래스 없음 — position: absolute
      Hux navbar-custom 기본(absolute; 스크롤하면 본문따라 사라짐)과 동일.
      흐름 밖이라 본문을 밀지 않고, .container(relative) 최상단에 얹혀
@@ -104,7 +115,32 @@
     width: 100vw;
     margin-left: -50vw;
     height: var(--hux-topbar-h);
+    /* 히어로를 y=0 까지 끌어올렸을 때 topbar 가 그 위에 겹쳐 보이도록
+       z-index 를 히어로보다 높인다. (히어로는 position:relative, z-index 없음) */
+    z-index: var(--hux-header-z);
     will-change: transform;
+    /* 배경색·글자색 전환을 부드럽게 (FLOW 투명/흰글씨 <-> VISIBLE 불투명/원래색).
+       initial top 도달 시 페이드 시간 동안 글자색도 함께 바뀌어 툭 튀지 않는다. */
+    transition: background-color var(--hux-header-anim),
+                color var(--hux-header-anim);
+  }
+
+  /* [히어로 있을 때 · FLOW(최상단)] topbar 배경 투명 + 글자 흰색.
+     Hux navbar-custom 기본(background:none; color:white)에 대응.
+     => 배경 이미지가 그대로 비치고, 그 위에 흰 글씨(breadcrumb/검색)가 얹힌다.
+     주의: FLOW 는 body 에 hux-* 클래스가 없는 상태. :not() 으로 FLOW 에만
+     한정한다. (이 한정이 없으면 HIDDEN 으로 재숨김될 때도 투명해져서
+     "배경이 사라지는" 것처럼 보인다.) hux-visible 등장 시엔 아래에서 불투명 복원. */
+  body:not(.hux-hidden):not(.hux-visible) #main-wrapper.has-hero #topbar-wrapper {
+    background-color: transparent;
+    color: #fff;
+  }
+  #main-wrapper.has-hero #topbar-wrapper #breadcrumb,
+  #main-wrapper.has-hero #topbar-wrapper #breadcrumb a,
+  #main-wrapper.has-hero #topbar-wrapper .btn {
+    color: #fff;
+    /* 글자색도 topbar 배경과 같은 시간 동안 페이드 (툭 튀지 않게) */
+    transition: color var(--hux-header-anim);
   }
 
   /* [숨김 / 등장 공통] position: fixed 로 전환 (화면 기준 고정)
@@ -136,9 +172,180 @@
     transform: translateY(0);
   }
 
-  /* [등장] translateY(100%) = 아래로 내려와 top:0 위치에 나타남 (부드럽게) */
+  /* [등장] translateY(100%) = 아래로 내려와 top:0 위치에 나타남 (부드럽게)
+     Hux is-fixed 의 다크모드 border 색(#414649)을 계승. 두께는 1px 유지.
+     (Hux 는 라이트=#f2f2f2 / 다크=#414649 로 모드별 색이 다르다) */
   body.hux-visible #topbar-wrapper {
     transform: translateY(100%);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid #414649;
   }
+
+  /* [히어로 있을 때 · 등장(VISIBLE)] 배경만 불투명으로 되돌린다.
+     글자색은 흰색을 유지 — Hux 다크모드처럼 최상단/등장 모두 밝은 글씨라
+     상태 전환 시 글자색 간극이 생기지 않는다. (배경만 투명 <-> 불투명)
+     DOM: body.hux-visible > #main-wrapper.has-hero > ... > #topbar-wrapper */
+  body.hux-visible #main-wrapper.has-hero #topbar-wrapper {
+    background-color: var(--topbar-bg);
+  }
+}
+
+/* ============================================================
+   Hux 스타일 히어로 헤더 (.hux-hero) — 전체폭 배경 + 텍스트 오버레이
+   ------------------------------------------------------------
+   [설계]
+   - Hux intro-header 이식. header-img 배경 + header-mask 어둠 오버레이 위에
+     제목/부제/태그/메타를 흰 글씨로 얹는다.
+   - 히어로는 main.col-xl-9(좁은 컬럼) 안에 렌더되므로, 100vw breakout 기법으로
+     뷰포트 전체 폭으로 빼낸다.
+   - 반응형: 모바일 → 데스크톱(md 768+) 폰트/패딩 확대 (Hux 값 참고).
+
+   [조정 포인트]
+   --hux-hero-pad-mobile / --hux-hero-pad-desktop : 히어로 높이(상하 패딩)
+   --hux-hero-maxw : 텍스트 블록 최대폭
+   ============================================================ */
+:root {
+  --hux-hero-pad-mobile: 85px;   /* 모바일 상하 패딩 */
+  --hux-hero-pad-desktop: 150px; /* 데스크톱 상하 패딩 (Hux 150px) */
+  --hux-hero-maxw: 840px;        /* 텍스트 블록 최대폭 */
+}
+
+.hux-hero {
+  position: relative;
+
+  /* full-bleed: 뷰포트 전체 폭. 부모가 .container(중앙 정렬)이므로
+     left:50% + margin-left:-50vw 가 좌우 대칭으로 정확히 화면 전체를 덮는다.
+     (main 컬럼 안이 아니라 container 직속에 있어야 이 대칭이 성립) */
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+
+  /* 배경 이미지 (경로는 inline style 로 주입됨) */
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-color: #666; /* 이미지 로드 전 폴백 */
+
+  /* 상하 패딩이 히어로 높이를 만든다 */
+  padding-top: var(--hux-hero-pad-mobile);
+  padding-bottom: var(--hux-hero-pad-mobile);
+
+  color: #fff;
+  overflow: hidden;
+}
+
+/* 어둡게 덮는 마스크 (agued 농도는 inline style 로 주입) */
+.hux-hero__mask {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* 텍스트 콘텐츠: 마스크 위(z-index), 가운데 정렬 블록 */
+.hux-hero__inner {
+  position: relative;
+  z-index: 1;
+  /* 본문과 좌측 시작점을 맞춘다: .container(max-width 1250, 중앙정렬)와 동일 폭으로
+     텍스트 블록을 감싸고, 그 안에서 좌측 정렬(기본)한다. => 제목 좌측 = 본문 좌측.
+     좌우 패딩은 본문 컬럼(col-xl-9 의 px-md-4 ≈ 1.5rem)에 근사하게 맞춘다. */
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  text-align: left;
+}
+
+/* xxl(1400px)+ : .container 가 px-xxl-5(좌우 3rem) 패딩을 가지므로 맞춘다 */
+@media (min-width: 1400px) {
+  .hux-hero__inner {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* 태그 알약 */
+.hux-hero__tags {
+  margin-bottom: 1rem;
+}
+
+.hux-hero__tag {
+  display: inline-block;
+  padding: 0.15em 0.7em;
+  margin: 0 0.3em 0.3em 0;
+  font-size: 0.8rem;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 1em;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.hux-hero__tag:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* 제목 */
+.hux-hero__title {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;   /* 모바일 */
+  font-weight: 800;
+  line-height: 1.2;
+  color: #fff;
+}
+
+/* 부제 */
+.hux-hero__subtitle {
+  margin: 0 0 1.2rem;
+  font-size: 1.1rem; /* 모바일 */
+  font-weight: 300;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* 메타 (작성자 · 날짜) */
+.hux-hero__meta {
+  font-size: 0.95rem;
+  font-style: italic;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hux-hero__meta a {
+  color: #fff;
+}
+
+/* 데스크톱(md 768+) 확대 — Hux 반응형 값 참고 */
+@media (min-width: 768px) {
+  .hux-hero {
+    padding-top: var(--hux-hero-pad-desktop);
+    padding-bottom: var(--hux-hero-pad-desktop);
+  }
+  .hux-hero__title {
+    font-size: 3.4rem; /* Hux post h1 55px 근사 */
+  }
+  .hux-hero__subtitle {
+    font-size: 1.6rem; /* Hux subheading 30px 근사 */
+  }
+  .hux-hero__meta {
+    font-size: 1.15rem;
+  }
+}
+
+/* ============================================================
+   Chirpy 기본 TOC 조정
+   ------------------------------------------------------------
+   - #toc-bar: xl 미만에서 "스크롤 내리면 나타나는" 상단 목차바.
+     우리 헤더(topbar) 동작과 겹치고 상단을 가리므로 숨긴다.
+     (목차 접근은 topbar 에 추가한 #topbar-toc-trigger 버튼 → 팝업으로 대체)
+   - #toc-solo-trigger: 기존 독립 목차 버튼. topbar 버튼으로 대체하므로 숨긴다.
+   - #toc-popup(dialog)는 그대로 두어 버튼 클릭 시 뜨게 한다.
+   ============================================================ */
+#toc-bar {
+  display: none !important;
+}
+
+#toc-solo-trigger {
+  display: none !important;
 }

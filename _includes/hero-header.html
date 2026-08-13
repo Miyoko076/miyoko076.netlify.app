@@ -1,0 +1,73 @@
+{%- comment -%}
+  hero-header.html — Hux intro-header 이식 (전체폭 배경 히어로)
+  ------------------------------------------------------------
+  front matter:
+    header-img   : 배경 이미지 경로 (없으면 히어로를 렌더하지 않음)
+    header-mask  : 배경 위 어둡게 오버레이 농도 0~1 (기본 0.4)
+    title        : 제목 (page.title)
+    subtitle     : 부제
+    tags         : 태그 알약
+    author/date  : 작성자 · 날짜 메타
+  ------------------------------------------------------------
+  · image(SEO/썸네일)와는 별개. 여기선 header-img 만 배경으로 쓴다.
+  · 렌더 조건: header-img 가 있을 때만.
+  · lang 은 호출부에서 넘겨준다(post.html). 없으면 site.lang.
+{%- endcomment -%}
+
+{%- assign _lang = include.lang | default: site.lang -%}
+{%- assign _mask = page.header-mask | default: 0.4 -%}
+
+{%- if page.header-img -%}
+<section
+  class="hux-hero"
+  style="background-image: url('{{ page.header-img | relative_url }}');"
+  data-hero="true"
+>
+  <div class="hux-hero__mask" style="background-color: rgba(0,0,0,{{ _mask }});"></div>
+
+  <div class="hux-hero__inner">
+    {%- if page.tags.size > 0 -%}
+    <div class="hux-hero__tags">
+      {%- for tag in page.tags -%}
+      <a
+        class="hux-hero__tag"
+        href="{{ site.baseurl }}/tags/{{ tag | slugify | url_encode }}/"
+      >{{ tag }}</a>
+      {%- endfor -%}
+    </div>
+    {%- endif -%}
+
+    <h1 class="hux-hero__title">{{ page.title }}</h1>
+
+    {%- if page.subtitle -%}
+    <p class="hux-hero__subtitle">{{ page.subtitle }}</p>
+    {%- endif -%}
+
+    <div class="hux-hero__meta">
+      {%- comment -%} 작성자 {%- endcomment -%}
+      {%- if page.author -%}
+        {%- assign _authors = page.author -%}
+      {%- elsif page.authors -%}
+        {%- assign _authors = page.authors -%}
+      {%- endif -%}
+
+      {{ site.data.locales[_lang].post.written_by | default: 'By' }}
+      <em>
+        {%- if _authors -%}
+          {%- for author in _authors -%}
+            {%- if site.data.authors[author].name -%}{{ site.data.authors[author].name }}{%- else -%}{{ author }}{%- endif -%}
+            {%- unless forloop.last -%}, {%- endunless -%}
+          {%- endfor -%}
+        {%- else -%}
+          {{ site.social.name | default: site.title }}
+        {%- endif -%}
+      </em>
+
+      {%- comment -%} 날짜 {%- endcomment -%}
+      <span class="hux-hero__date">
+        {%- include datetime.html date=page.date tooltip=false lang=_lang -%}
+      </span>
+    </div>
+  </div>
+</section>
+{%- endif -%}
