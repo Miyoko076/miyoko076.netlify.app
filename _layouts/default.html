@@ -17,7 +17,7 @@ layout: compress
 >
   {% include head.html lang=lang %}
 
-  <body>
+  <body class="hux-preload{% unless page.layout == 'post' %} has-sidebar{% endunless %}">
     {% include sidebar.html lang=lang %}
 
     {%- comment -%}
@@ -53,10 +53,17 @@ layout: compress
 
           <!-- panel -->
           <aside aria-label="Panel" id="panel-wrapper" class="col-xl-3 ps-2 text-muted">
-            <div class="access">
-              {% include_cached update-list.html lang=lang %}
-              {% include_cached trending-tags.html lang=lang %}
-            </div>
+            {%- comment -%}
+              최근 업데이트(update-list) · 인기 태그(trending-tags) 는 홈 등 다른
+              페이지에만 두고, 포스트 페이지에서는 제거한다(우측 패널을 '바로가기'
+              TOC 만으로 간결하게). 바로가기(TOC)는 아래 panel_includes 경로라 영향 없음.
+            {%- endcomment -%}
+            {% unless page.layout == 'post' %}
+              <div class="access">
+                {% include_cached update-list.html lang=lang %}
+                {% include_cached trending-tags.html lang=lang %}
+              </div>
+            {% endunless %}
 
             {% for _include in layout.panel_includes %}
               {% assign _include_path = _include | append: '.html' %}

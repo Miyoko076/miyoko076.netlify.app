@@ -40,24 +40,6 @@
     </nav>
     <!-- endof #breadcrumb -->
 
-    {%- comment -%}
-      목차 버튼: post 레이아웃에서 TOC 가 활성일 때만.
-      .toc-trigger 클래스를 그대로 써서 gem 의 toc-mobile.js 가 클릭을 잡아 팝업을 연다.
-      (xl 미만에서 작동. xl 이상은 gem 이 mobile 을 init 안 하므로 무용 —
-       2단계에서 브레이크포인트로 분리 예정)
-    {%- endcomment -%}
-    {% include toc-status.html %}
-    {% if enable_toc %}
-      <button
-        type="button"
-        id="topbar-toc-trigger"
-        class="toc-trigger btn btn-link"
-        aria-label="Table of Contents"
-      >
-        <i class="fas fa-list-ul fa-fw"></i>
-      </button>
-    {% endif %}
-
     <button type="button" id="sidebar-trigger" class="btn btn-link" aria-label="Sidebar">
       <i class="fas fa-bars fa-fw"></i>
     </button>

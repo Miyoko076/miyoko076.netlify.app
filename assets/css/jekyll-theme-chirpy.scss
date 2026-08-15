@@ -55,6 +55,49 @@
 }
 
 /* ============================================================
+   [포스트 외 전체] 좌측 사이드바 되살리기 (body.has-sidebar)
+   ------------------------------------------------------------
+   포스트를 제외한 모든 페이지(홈·카테고리·태그·아카이브·about 등)에서 default.html
+   이 body 에 has-sidebar 를 붙인다 (default.html 에서 page.layout 이 post 가
+   아닌지로 판정 — unless post, 빌드 타임 → FOUC 없음). 판정을 레이아웃 로직에 두는
+   방식은 '최근 업데이트/인기 태그'를 포스트에서 제거한 처리와 동일한 패턴이라,
+   페이지별 표시 정책이 default.html 한 곳에 모인다. "포스트만 예외"로 뒤집었으므로
+   category/tag 같은 개별 목록 페이지나 이후 추가될 비-post 레이아웃도 자동 커버된다.
+   has-sidebar 일 때 위 1)~3) 의 사이드바 제거를 되돌려 gem 기본 레이아웃(사이드바
+   + 그 폭만큼 밀린 본문)을 복원한다. !important 로 덮었으므로 되돌릴 때도
+   !important + 한정 셀렉터를 쓴다.
+   gem 원래 반응형: #main-wrapper margin-left = 260px(lg+) / 300px(xxxl, ≥1650px).
+   ============================================================ */
+body.has-sidebar #sidebar {
+  display: flex !important; /* gem 기본은 flex 컬럼 */
+}
+
+body.has-sidebar #main-wrapper {
+  margin-left: 0 !important; /* lg 미만: 사이드바가 오프캔버스라 offset 없음 */
+
+  /* container 중앙정렬 오버라이드 해제 → gem 기본으로 (사이드바 옆 공간 채우기) */
+  > .container {
+    max-width: none;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+/* lg(≥850) 이상: 본문을 사이드바 폭(260px)만큼 민다 (gem $sidebar-width) */
+@media (min-width: 850px) {
+  body.has-sidebar #main-wrapper {
+    margin-left: 260px !important;
+  }
+}
+
+/* xxxl(≥1650) 이상: 큰 사이드바 폭(300px) (gem $sidebar-width-large) */
+@media (min-width: 1650px) {
+  body.has-sidebar #main-wrapper {
+    margin-left: 300px !important;
+  }
+}
+
+/* ============================================================
    Hux 스타일 헤더(topbar) 3상태 — 스크롤 방향 반응 (겹침 방식)
    ------------------------------------------------------------
    [설계]
@@ -78,8 +121,40 @@
   --hux-header-anim: 0.3s ease;  /* 여닫기 트랜지션 (Hux 는 0.3s) */
 }
 
-/* xl(1200) 이상에서만 이 동작을 적용 (그 미만은 Chirpy 기본 유지) */
-@media (min-width: 1200px) {
+/* [topbar 배경 불투명도 상향] gem 기본은 다크 64% / 라이트 70% 로 꽤 투명하다.
+   Hux 원본의 is-fixed 는 90%(fade(white,90%)) 였으므로, 색조는 gem 것을 유지하고
+   알파만 90% 로 올린다. Chirpy 의 세 테마 셀렉터를 모두 커버:
+   명시적 dark / 명시적 light / 시스템 자동(data-mode 없음). */
+:root[data-mode='dark'] {
+  --topbar-bg: rgb(27 27 30 / 90%);
+}
+:root[data-mode='light'] {
+  --topbar-bg: rgb(255 255 255 / 90%);
+}
+:root:not([data-mode]) {
+  --topbar-bg: rgb(255 255 255 / 90%); /* 시스템 라이트 기본 */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-mode]) {
+    --topbar-bg: rgb(27 27 30 / 90%);  /* 시스템 다크 */
+  }
+}
+
+/* 전 구간(모든 폭)에서 이 동작을 적용한다.
+   ------------------------------------------------------------
+   [경계 제거 근거] 좌측 사이드바 미사용 방침에 따라 모바일에서도 우리 topbar
+   구성(경로─목차─검색아이콘) + 플로팅(스크롤 fixed+접힘)을 그대로 쓴다.
+   따라서 이전의 `@media (min-width: 850px)` 경계를 제거해 전역 규칙으로 만든다.
+
+   [Chirpy 모바일 규칙과의 관계] Chirpy 원본 _topbar.scss 는 lt(lg) 에서
+   #topbar-wrapper 에 `left:0` + slide 를 건다. 아래 규칙들은 전역(미디어쿼리
+   밖)이고 우리 커스텀은 gem(main) 뒤에 로드되므로, 같은 명시도에서 소스 순서로
+   우리가 이긴다(left:0 → 우리 breakout 로 대체). 표시 구성(경로/제목/햄버거)은
+   별도의 `max-width: 849px` 모바일 블록에서 이미 맞췄다.
+
+   [JS 연동] hux-scroll.js 의 ACTIVE_MIN_WIDTH 도 0 으로 내려 전 구간에서
+   상태 클래스(hux-hidden/visible)를 토글하게 해야 이 CSS 가 실제로 동작한다. */
+@media (min-width: 0px) {
 
   /* [레이아웃 기준] .container 를 absolute 헤더의 기준점으로 삼고,
      헤더가 흐름 밖으로 나가면서 생기는 빈자리(헤더높이)를 padding-top 으로
@@ -90,15 +165,33 @@
     padding-top: var(--hux-topbar-h);
   }
 
-  /* [히어로가 있을 때] topbar 뒤(y=0)까지 히어로 이미지가 깔리도록:
-     - .container 의 상단 자리확보 padding 제거
-     - 히어로를 topbar 높이만큼 위로 끌어올려 y=0 부터 시작
-     => topbar 가 히어로 이미지 위에 겹쳐진다. (Hux 의 navbar-over-banner 구조) */
+  /* [히어로가 있을 때] 상단 자리확보 padding 만 제거한다.
+     ------------------------------------------------------------
+     이전에는 여기서 히어로를 topbar 높이만큼 위로 끌어올려(margin-top: -48px)
+     topbar 뒤(y=0)까지 이미지를 깔았다(Hux navbar-over-banner). 그러나 그 결과
+     이미지 상단 48px 이 topbar 에 가려/잘려 보였고, lg 구간에는 이 끌어올림이
+     없어 구간 간 시작점이 달랐다(xl: -48 / lg: 0).
+     => 끌어올림(margin-top)을 제거해 "모든 구간에서 히어로가 0 에서 시작"으로
+        통일한다. topbar 겹침(navbar-over-banner)은 이후 전 구간 로직 통일 단계에서
+        다시 설계한다.
+     (padding-top:0 은 유지: topbar 가 absolute(흐름 밖)라 상단 자리확보가 불필요
+      하며, 남겨두면 히어로 위에 48px 빈 자리가 생긴다.) */
   #main-wrapper.has-hero > .container {
     padding-top: 0;
   }
-  #main-wrapper.has-hero .hux-hero {
-    margin-top: calc(-1 * var(--hux-topbar-h));
+
+  /* [히어로 페이지 · 검색 결과 표시 시] topbar 높이만큼 상단 자리 복구.
+     ------------------------------------------------------------
+     문제: 위에서 has-hero 는 상단 자리확보 padding 을 0 으로 없앤다(히어로가
+           y=0 부터 깔리도록). 그런데 검색을 켜면 gem 이 본문(.row)과 히어로(우리
+           JS)를 숨기고 #search-result-wrapper(container 직속)를 보이는데, topbar 는
+           absolute(흐름 밖)라 이 검색 결과가 y=0 부터 시작해 topbar 뒤로 가려진다.
+     해결: 검색 결과가 보이는 상태(gem 이 .d-none 을 제거)에서만 topbar 높이(48px)
+           만큼 위 여백을 준다. 결과 요소 자체에 margin-top 을 주어, 히어로 유무와
+           무관하게 topbar 아래에서 시작하게 한다. (일반 포스트는 .container 의
+           padding-top:48px 가 살아있어 이 문제가 없다 → has-hero 한정.) */
+  #main-wrapper.has-hero #search-result-wrapper:not(.d-none) {
+    margin-top: var(--hux-topbar-h);
   }
 
   /* [기본 상태 FLOW] 클래스 없음 — position: absolute
@@ -119,25 +212,48 @@
        z-index 를 히어로보다 높인다. (히어로는 position:relative, z-index 없음) */
     z-index: var(--hux-header-z);
     will-change: transform;
-    /* 배경색·글자색 전환을 부드럽게 (FLOW 투명/흰글씨 <-> VISIBLE 불투명/원래색).
-       initial top 도달 시 페이드 시간 동안 글자색도 함께 바뀌어 툭 튀지 않는다. */
+    /* border-bottom 을 항상 1px 로 유지하되 기본은 투명. 이렇게 해야 VISIBLE 의
+       불투명 경계선이 FLOW 로 갈 때 width 변화(1px↔0) 없이 색(알파)만 페이드되어
+       "툭 사라짐" 없이 부드럽게 사라진다. (width 를 토글하면 트랜지션이 안 걸린다) */
+    border-bottom: 1px solid transparent;
+    /* [블러] FLOW(최상단) 는 블러 없음. 단 none 이 아니라 blur(0px) 로 두어야
+       VISIBLE 의 blur(8px)와의 사이에서 트랜지션이 걸린다(none↔blur 은 불가). */
+    -webkit-backdrop-filter: blur(0px);
+    backdrop-filter: blur(0px);
+    /* 배경색·글자색·경계선색·블러 전환을 부드럽게
+       (FLOW 투명/흰글씨/투명선/블러0 <-> VISIBLE 불투명/원래색/불투명선/블러8). */
     transition: background-color var(--hux-header-anim),
-                color var(--hux-header-anim);
+                color var(--hux-header-anim),
+                border-bottom-color var(--hux-header-anim),
+                backdrop-filter var(--hux-header-anim),
+                -webkit-backdrop-filter var(--hux-header-anim);
   }
 
-  /* [히어로 있을 때 · FLOW(최상단)] topbar 배경 투명 + 글자 흰색.
+  /* [초기 로드 시 전환 억제] 첫 방문 시 topbar 가 "불투명→투명" 으로 페이드되는
+     애니메이션이 보이는 문제를 막는다. body.hux-preload 인 동안(=첫 페인트~JS init
+     직전)은 트랜지션을 꺼서, 초기 FLOW(투명) 상태가 애니메이션 없이 즉시 적용되게
+     한다. JS(hux-scroll.js)가 init 에서 hux-preload 를 제거하면 그때부터 정상 전환.
+     (default.html 의 <body class="hux-preload"> 와 짝을 이룬다.) */
+  body.hux-preload #topbar-wrapper {
+    transition: none !important;
+  }
+
+  /* [FLOW(최상단)] topbar 배경 투명 + 글자 흰색.
      Hux navbar-custom 기본(background:none; color:white)에 대응.
-     => 배경 이미지가 그대로 비치고, 그 위에 흰 글씨(breadcrumb/검색)가 얹힌다.
+     => (히어로 페이지) 배경 이미지가 비치고 흰 글씨가 얹힌다.
+        (히어로 없는 페이지) 뒤 페이지 배경이 비치며, VISIBLE→FLOW 로 돌아올 때
+        배경이 불투명→투명 페이드되어 히어로 페이지와 동일한 전환을 얻는다.
      주의: FLOW 는 body 에 hux-* 클래스가 없는 상태. :not() 으로 FLOW 에만
      한정한다. (이 한정이 없으면 HIDDEN 으로 재숨김될 때도 투명해져서
-     "배경이 사라지는" 것처럼 보인다.) hux-visible 등장 시엔 아래에서 불투명 복원. */
-  body:not(.hux-hidden):not(.hux-visible) #main-wrapper.has-hero #topbar-wrapper {
+     "배경이 사라지는" 것처럼 보인다.) hux-visible 등장 시엔 아래에서 불투명 복원.
+     [변경] 히어로 유무와 무관하게 동일 효과를 주기 위해 .has-hero 조건을 뺐다. */
+  body:not(.hux-hidden):not(.hux-visible) #main-wrapper #topbar-wrapper {
     background-color: transparent;
     color: #fff;
   }
-  #main-wrapper.has-hero #topbar-wrapper #breadcrumb,
-  #main-wrapper.has-hero #topbar-wrapper #breadcrumb a,
-  #main-wrapper.has-hero #topbar-wrapper .btn {
+  #main-wrapper #topbar-wrapper #breadcrumb,
+  #main-wrapper #topbar-wrapper #breadcrumb a,
+  #main-wrapper #topbar-wrapper .btn {
     color: #fff;
     /* 글자색도 topbar 배경과 같은 시간 동안 페이드 (툭 튀지 않게) */
     transition: color var(--hux-header-anim);
@@ -164,6 +280,21 @@
     height: var(--hux-topbar-h);
     z-index: var(--hux-header-z);
     background-color: var(--topbar-bg);
+    /* [블러] 스크롤 상태(VISIBLE·HIDDEN)에서만 backdrop blur 를 켠다. 두 상태 모두
+       8px 로 동일하므로 그 사이엔 변화가 없고, FLOW(base 의 blur(0px))로 갈 때만
+       0↔8 로 전환된다. => 최상단에선 블러 없음, 스크롤 시에만 뒤 콘텐츠가 뿌옇게.
+       (동식이 블로그 헤더의 blur(14px) 를 참고해 8px 로 약하게 적용.) */
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    /* 하단선: VISIBLE·HIDDEN 두 상태 모두 불투명으로 "살아있게" 한다.
+       (base 의 FLOW 는 transparent) => VISIBLE↔HIDDEN 사이엔 색이 #414649 로
+       동일해 변화가 없어 선이 계속 유지되고, FLOW(최상단)로 갈 때만 transparent
+       와의 차이로 페이드된다. Hux 다크모드 border 색(#414649) 계승, 두께 1px. */
+    border-bottom-color: #414649;
+    /* 여기 transition 은 transform(여닫기 슬라이드) 만. VISIBLE↔HIDDEN 사이에선
+       배경·하단선이 페이드되면 안 되고(선은 계속 살아있어야 함), 값도 서로 같아
+       변화가 없다. 배경/하단선 페이드는 FLOW(최상단)로 갈 때만 필요하며, 그건
+       도착점 FLOW 의 base transition 이 담당한다. */
     transition: transform var(--hux-header-anim);
   }
 
@@ -173,19 +304,193 @@
   }
 
   /* [등장] translateY(100%) = 아래로 내려와 top:0 위치에 나타남 (부드럽게)
-     Hux is-fixed 의 다크모드 border 색(#414649)을 계승. 두께는 1px 유지.
-     (Hux 는 라이트=#f2f2f2 / 다크=#414649 로 모드별 색이 다르다) */
+     하단선 색은 위 공통 규칙(#414649)에서 지정 — VISIBLE·HIDDEN 공통이라 여기선
+     transform 만 담당한다. */
   body.hux-visible #topbar-wrapper {
     transform: translateY(100%);
-    border-bottom: 1px solid #414649;
   }
 
-  /* [히어로 있을 때 · 등장(VISIBLE)] 배경만 불투명으로 되돌린다.
+  /* [등장(VISIBLE)] 배경을 불투명으로 되돌린다.
      글자색은 흰색을 유지 — Hux 다크모드처럼 최상단/등장 모두 밝은 글씨라
      상태 전환 시 글자색 간극이 생기지 않는다. (배경만 투명 <-> 불투명)
-     DOM: body.hux-visible > #main-wrapper.has-hero > ... > #topbar-wrapper */
-  body.hux-visible #main-wrapper.has-hero #topbar-wrapper {
+     [변경] 히어로 유무와 무관하게 동일 효과를 위해 .has-hero 조건을 뺐다.
+     이로써 히어로 없는 페이지도 FLOW(투명)↔VISIBLE(불투명) 배경 페이드가 성립한다. */
+  body.hux-visible #main-wrapper #topbar-wrapper {
     background-color: var(--topbar-bg);
+  }
+
+  /* ------------------------------------------------------------
+     [사이드바 있을 때 topbar 위치 보정] body.has-sidebar
+     ------------------------------------------------------------
+     기본 topbar 는 사이드바 없는 전제라 100vw breakout 으로 뷰포트 전체폭을
+     차지한다. 사이드바가 켜지면 그 폭만큼 왼쪽이 사이드바와 겹치므로, topbar 를
+     "사이드바 뺀 콘텐츠 영역"에 맞춘다.
+       · FLOW(absolute): #main-wrapper(이미 사이드바만큼 밀림)의 .container 기준
+         이므로 breakout 을 제거하고 부모 폭(100%)만 채우면 정확히 콘텐츠 영역이 된다.
+       · fixed(HIDDEN/VISIBLE): 뷰포트 기준이라 사이드바 폭만큼 left 를 밀고 그만큼
+         width 를 줄인다. 폭은 반응형(lg 260 / xxxl 300 / lg미만 0=오프캔버스).
+     ------------------------------------------------------------ */
+  body.has-sidebar #topbar-wrapper {
+    /* FLOW: breakout 해제 → 부모(.container, 사이드바 뺀 영역) 꽉 채움 */
+    left: 0;
+    width: 100%;
+    margin-left: 0;
+  }
+  body.has-sidebar.hux-hidden #topbar-wrapper,
+  body.has-sidebar.hux-visible #topbar-wrapper {
+    /* fixed: lg 미만은 사이드바 오프캔버스라 좌측 끝부터(기본과 동일) */
+    left: 0;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  /* ------------------------------------------------------------
+     [topbar 내부 정렬 통일] breadcrumb 폭 · 검색바 마진
+     ------------------------------------------------------------
+     문제: xl→lg 로 좁아지면 목차 버튼(≡)이 화면 51%→73% 로 크게 밀리고,
+           검색바 우측 위치도 달라졌다.
+     원인: Chirpy 원본 _topbar.scss 는
+           · #breadcrumb 에 lg~xl 구간만 `width: 65%` 를 강제한다.
+             (#topbar 는 justify-content: space-between 이므로 breadcrumb 이
+              65% 를 차지하면 다음 요소인 목차버튼이 그 지점까지 밀린다.)
+           · search 에 `margin-right: 4rem` 을 xl 이상에서만 준다.
+         이 값들은 원래 사이드바+3컬럼 레이아웃 기준 튜닝인데, 우리는 사이드바를
+         없애고 topbar 를 전체폭으로 뺐으므로 그대로 두면 어긋난다.
+     해결: 활성 구간(≥lg) 전체에서
+           · breadcrumb 의 65% 강제를 풀어 내용 크기만 차지하게 한다
+             (=xl 기본과 동일 → 목차버튼이 breadcrumb 바로 옆에 고정).
+           · search 의 우측 마진을 xl 값(4rem)으로 통일한다.
+     ------------------------------------------------------------ */
+  /* [topbar 좌우 패딩 고정] 992 경계에서 topbar 가 흔들리지 않게 한다.
+     ------------------------------------------------------------
+     문제: #topbar 에는 gem 이 붙인 Bootstrap 클래스 `px-lg-3` 이 있는데,
+           Bootstrap 의 lg 는 992px 다(Chirpy sass 의 lg=850 과 다름). 그래서
+           992 를 경계로 topbar 좌우 패딩이 0 ↔ 16px 로 툭 바뀌어, breadcrumb
+           좌측 위치가 튄다.
+     주의: 본문(article) 여백은 Chirpy 의 `between(992,1199){col-lg-11:96%}` 로
+           992 에서 좁아지는데, 이는 좁은 화면에서 글 양옆 여백을 줄이려는 의도된
+           동작이라 유지한다. topbar 는 그 영향과 무관해야 하므로 여기서 분리한다.
+     해결: px-lg-3 의 브레이크포인트 의존을 무력화하고, xl 에서 이미 쓰던 값(1rem)
+           으로 전 구간 좌우 패딩을 고정한다. (breadcrumb 이 화면 좌측 끝에서 살짝
+           들어와 히어로 위에서도 자연스럽다.)
+     [!important 이유] Bootstrap 유틸리티(px-lg-3)는 !important 라, 992 이상에서
+           우리 non-important 규칙을 이겨버린다. 전 구간을 우리가 단일 통제하려면
+           여기서도 !important 로 맞춰야 한다(값 변경 시 이 한 곳만 고치면 됨). */
+  #topbar {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* breadcrumb: 내용 크기만 차지(width:auto)시켜 목차 버튼이 바로 옆에 붙게 하되,
+     한 줄 고정(nowrap) + 넘치면 말줄임(ellipsis)으로 topbar 높이가 늘지 않게 한다.
+     ------------------------------------------------------------
+     [왜 nowrap 이 필요한가] 아래 search 폭 문제와 별개의 안전장치.
+     경로가 길거나 폭이 애매할 때 breadcrumb 이 2줄로 줄바꿈되면 topbar 가
+     세로로 커진다(48→…). nowrap 으로 항상 1줄에 가두고, max-width 로 상한을
+     둬 목차 버튼 자리를 침범하지 않게 한다. */
+  #topbar #breadcrumb {
+    width: auto;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: keep-all;
+  }
+
+  /* search: 폭을 전 구간에서 항상 제한한다(핵심 수정).
+     ------------------------------------------------------------
+     [문제] dpr 1.5 등 프랙셔널 뷰포트에서 849.333px 같은 값이 나오면,
+       Chirpy 원본의 두 미디어쿼리 사이 "사각지대"에 빠진다:
+         · lt(lg) `@media(max-width:849px)` → 849.333 > 849 라 검색바 숨김 미적용
+         · lg    `@media(min-width:850px)`  → 849.333 < 850 이라 max-width:200 미적용
+       결과: 검색바가 "보이는데 폭 제한이 없어" width:100% 로 569px 까지 늘어나고,
+       breadcrumb 을 밀어 topbar 가 2줄로 터진다. (Chirpy 공식에도 있는 버그)
+     [해결] 검색바 max-width 를 미디어쿼리 경계에 의존하지 않는 전 구간(min-width:0)
+       규칙으로 항상 200px 로 고정해 사각지대를 메운다. (모바일에선 검색바가
+       display:none 이라 무해하고, 아이콘 탭으로 펼칠 때만 gem 이 표시한다.) */
+  #topbar search#search {
+    max-width: 200px; /* = Chirpy $search-max-width */
+    margin-right: 4rem;
+  }
+}
+
+/* ============================================================
+   [사이드바 있을 때 · fixed topbar 반응형 오프셋] body.has-sidebar
+   ------------------------------------------------------------
+   fixed 상태(HIDDEN/VISIBLE)는 뷰포트 기준이라, 사이드바(fixed, 좌측 0)와
+   겹치지 않도록 lg 이상에서 사이드바 폭만큼 left 를 밀고 width 를 줄인다.
+   (FLOW=absolute 는 부모 기준이라 이미 콘텐츠 영역에 맞으므로 별도 오프셋 불필요.
+    lg 미만은 사이드바가 오프캔버스라 left:0 그대로 — 위 블록에서 처리됨.)
+   ============================================================ */
+@media (min-width: 850px) {
+  body.has-sidebar.hux-hidden #topbar-wrapper,
+  body.has-sidebar.hux-visible #topbar-wrapper {
+    left: 260px; /* gem $sidebar-width */
+    width: calc(100% - 260px);
+  }
+}
+@media (min-width: 1650px) {
+  body.has-sidebar.hux-hidden #topbar-wrapper,
+  body.has-sidebar.hux-visible #topbar-wrapper {
+    left: 300px; /* gem $sidebar-width-large */
+    width: calc(100% - 300px);
+  }
+}
+
+/* ============================================================
+   [모바일 구간 lg 미만(< 850px)] 우리 topbar 구성 강제
+   ------------------------------------------------------------
+   방침: 좌측 사이드바를 쓰지 않으므로, Chirpy 가 lg 미만에서 갈아끼우는
+        "모바일 헤더(햄버거 ─ 페이지제목 ─ 검색아이콘)" 대신, 데스크톱과 같은
+        우리 topbar 구성(경로 ─ 목차 ─ 검색아이콘)을 그대로 쓴다.
+
+   [Chirpy 원본이 lg 미만에서 강제하는 것 → 우리 대응]
+     · breadcrumb        : display:none        → 되돌려 [보이게]
+     · topbar-title      : display:block(가운데) → [숨김] (경로가 그 역할)
+     · sidebar-trigger(☰): display:block        → [숨김] (사이드바 미사용)
+     · search-trigger(🔍) : display:block        → [유지] (탭하면 검색 펼침)
+     · search(검색바 자체) : display:none         → [유지, 손대지 않음]
+         ↑ gem search-display.js 가 🔍 클릭 시 #search 에 .d-flex 를 붙여
+           검색바를 펼친다. 여기서 display 를 강제하면 그 토글이 깨지므로
+           절대 건드리지 않는다. (검색은 "아이콘 → 펼침" 방식 그대로 사용)
+
+   [주의] search / search-trigger / search-cancel 은 gem 토글 로직이
+          소유한다. 표시 제어를 우리가 덮어쓰지 않는다.
+   ============================================================ */
+@media (max-width: 849px) {
+
+  /* 경로(breadcrumb) 를 다시 보이게. Chirpy 가 lt(lg) 에서 숨긴 것을 되돌린다.
+     폭/줄바꿈 처리(width:auto + nowrap + ellipsis + max-width)는 위 전 구간
+     블록에서 이미 지정했으므로 여기선 display 만 되돌린다. (max-width:none 으로
+     덮으면 nowrap 안전장치가 무력화되니 건드리지 않는다.) */
+  #topbar #breadcrumb {
+    display: block;
+  }
+
+  /* 페이지 제목(topbar-title): 경로가 그 역할을 하므로 숨긴다.
+     (Chirpy 는 lt(lg) 에서 이걸 가운데 표시했다.) */
+  #topbar-title {
+    display: none !important;
+  }
+
+  /* 햄버거(☰): 사이드바를 쓰지 않으므로 자리까지 제거.
+     전역의 visibility:hidden(자리 남김)은 데스크톱 title 균형추용이었는데,
+     모바일에선 title 을 숨겨 균형추가 불필요하다. display:none 으로 정리. */
+  #sidebar-trigger {
+    display: none !important;
+  }
+
+  /* 검색바 우측 마진·폭 리셋.
+     ------------------------------------------------------------
+     · margin-right: 위(전 구간) 블록의 4rem 은 데스크톱에서 검색바를 우측 끝에서
+       안쪽으로 들이는 튜닝. 모바일 펼침 검색바를 밀어 좁히므로 0 으로 되돌린다.
+     · max-width: 위 블록의 200px 는 사각지대 방지용(데스크톱 검색바 폭 고정).
+       모바일에선 🔍 아이콘 탭 시 gem 이 #search 를 전체폭(width:100%)으로 펼치는데,
+       200px 상한이 남아 있으면 펼침이 200px 에 갇힌다. => none 으로 풀어 전체폭
+       펼침을 허용한다. (평소 검색바는 display:none 이라 이 값은 펼칠 때만 의미) */
+  #topbar search#search {
+    margin-right: 0;
+    max-width: none;
   }
 }
 
@@ -338,9 +643,14 @@
    ------------------------------------------------------------
    - #toc-bar: xl 미만에서 "스크롤 내리면 나타나는" 상단 목차바.
      우리 헤더(topbar) 동작과 겹치고 상단을 가리므로 숨긴다.
-     (목차 접근은 topbar 에 추가한 #topbar-toc-trigger 버튼 → 팝업으로 대체)
-   - #toc-solo-trigger: 기존 독립 목차 버튼. topbar 버튼으로 대체하므로 숨긴다.
-   - #toc-popup(dialog)는 그대로 두어 버튼 클릭 시 뜨게 한다.
+   - #toc-solo-trigger: 본문 상단에 뜨는 독립 목차 열기 버튼. 우리 레이아웃과
+     맞지 않아 숨긴다.
+   - 이 둘을 숨겨도 xl 우측의 목차 패널(post.html 의 #toc-wrapper "바로가기")은
+     별개라 그대로 나온다. 모바일 목차는 gem 의 #toc-popup(dialog)이 담당하며
+     dialog 는 건드리지 않는다.
+   - 참고: 한때 topbar 에 목차 열기 버튼(#topbar-toc-trigger)을 두었으나,
+     xl 에서는 우측 패널과 중복이고 xl 미만 전용 핸들러라 위치/동작이 어중간해
+     제거했다. 목차 접근은 gem 기본 UI(우측 패널 · popup)에 맡긴다.
    ============================================================ */
 #toc-bar {
   display: none !important;
