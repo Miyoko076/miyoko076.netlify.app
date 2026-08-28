@@ -7,7 +7,9 @@ JEKYLL_ENV = "production"
 NODE_VERSION = "22"
 
 [dev]
-command = "npm run build:js && bundle exec jekyll serve --port 4000"
+command = "npm run dev:netlify"
+targetPort = 4000
+port = 8888
 publish = "_site"
 
 [dev.environment]

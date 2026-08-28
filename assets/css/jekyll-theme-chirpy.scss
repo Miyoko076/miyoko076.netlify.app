@@ -72,6 +72,31 @@ body.has-sidebar #sidebar {
   display: flex !important; /* gem 기본은 flex 컬럼 */
 }
 
+/* [849~850 프랙셔널 갭 버그 수정]
+   ------------------------------------------------------------
+   gem 의 사이드바 숨김은 _sidebar.scss 의 bp.lt(lg) = max-width:849px 로
+   걸리고, 표시는 bp.lg = min-width:850px 다. 그 사이 849 < x < 850 의
+   프랙셔널 뷰포트(DPR 1.5 의 849.333px 등)에서는 두 규칙이 모두 빗나가
+   사이드바가 숨김도 표시도 아닌 상태로 남는다(= 검색바/본문은 모바일로
+   바뀌었는데 좌측 사이드바만 남는 버그).
+   → max-width:849.98px 로 갭을 덮어, 850 미만 전 구간에서 확실히 숨긴다.
+     (gem 과 동일하게 translateX 오프캔버스 방식. #main-wrapper margin 은
+      아래 min-width:850 블록이 담당하므로 850 이상에는 영향 없다.) */
+@media (max-width: 849.98px) {
+  body.has-sidebar #sidebar {
+    transform: translateX(-260px) !important; /* gem $sidebar-width */
+    -webkit-transform: translateX(-260px) !important;
+  }
+  /* 단, 햄버거로 여는 상태([sidebar-display])에서는 gem 과 동일하게 표시.
+     (sidebar.js 가 document.body 에 sidebar-display 속성을 토글하므로
+      셀렉터는 body[sidebar-display]. 우리 !important 가 gem 트리거 예외를
+      덮지 않도록 여기서 복원한다.) */
+  body.has-sidebar[sidebar-display] #sidebar {
+    transform: translateX(0) !important;
+    -webkit-transform: translateX(0) !important;
+  }
+}
+
 body.has-sidebar #main-wrapper {
   margin-left: 0 !important; /* lg 미만: 사이드바가 오프캔버스라 offset 없음 */
 
@@ -560,13 +585,9 @@ body.has-sidebar #main-wrapper {
   text-align: left;
 }
 
-/* xxl(1400px)+ : .container 가 px-xxl-5(좌우 3rem) 패딩을 가지므로 맞춘다 */
-@media (min-width: 1400px) {
-  .hux-hero__inner {
-    padding-left: 3rem;
-    padding-right: 3rem;
-  }
-}
+/* (구 xxl 1400+ 히어로 inner 패딩 override) — 삭제됨.
+   post 에서는 body:not(.has-sidebar) 의 연속 마진 clamp 가 히어로 inner
+   좌우 패딩을 본문과 동일하게 담당한다. */
 
 /* 태그 알약 */
 .hux-hero__tags {
@@ -621,8 +642,13 @@ body.has-sidebar #main-wrapper {
   color: #fff;
 }
 
-/* 데스크톱(md 768+) 확대 — Hux 반응형 값 참고 */
-@media (min-width: 768px) {
+/* 데스크톱 확대 — Hux 반응형 값 참고.
+   경계: 좌측 사이드바 제거로 우측 패널/본문 전환을 850(=1200-350)으로
+   당겼으므로, 히어로 형식(패딩/폰트) 전환도 그 지점에 맞춘다.
+   (768 → 850. 768~849 구간은 모바일 히어로로 유지된다.)
+   ★ 이 값은 body:not(.has-sidebar) 블록의 850 및 toc.js desktopMode 와
+     함께 움직여야 한다. 경계 조정 시 세 곳을 같이 맞출 것. */
+@media (min-width: 850px) {
   .hux-hero {
     padding-top: var(--hux-hero-pad-desktop);
     padding-bottom: var(--hux-hero-pad-desktop);
@@ -658,4 +684,136 @@ body.has-sidebar #main-wrapper {
 
 #toc-solo-trigger {
   display: none !important;
+}
+
+/* ============================================================
+   [post 전용] 좌측 사이드바 제거에 따른 모드 경계 당김 (-260px)
+   ------------------------------------------------------------
+   배경: gem 의 본문 컬럼 경계(992 / 1200 / 1400)는 좌측 사이드바
+         260px 가 있다는 전제로 잡혀 있다. post 는 좌측 사이드바를
+         제거했으므로, 같은 뷰포트 폭에서 콘텐츠 실효폭이 260px 더
+         넓다. 따라서 각 전환 경계를 260px 앞으로 당긴다.
+
+   스코프: body:not(.has-sidebar) = post (default.html 에서 post 가
+           아닌 페이지에만 has-sidebar 를 붙이므로).
+           non-post(홈/태그 등)는 좌측 사이드바가 살아있어 gem 기본
+           경계를 그대로 둔다.
+
+   ★ 값은 일단 정확히 -260 으로 넣었다. netlify dev 로 눈으로 확인 후
+     조정할 것. 특히 우측 패널(TOC)도 260px 를 차지하므로, 1200→940
+     이 좁게 느껴지면 940 을 키우고, 아래 toc.js 의 desktopMode
+     경계도 같은 값으로 맞춰야 한다(현재 미동기화 시 940~1199 에서
+     빈 패널이 뜬다).
+   ============================================================ */
+body:not(.has-sidebar) {
+
+  /* ① (구 992 축소 제거) — 삭제됨.
+     -350 당김으로 ②의 3컬럼 전환이 850 부터 시작되므로, 850~1199 에서
+     col-lg-11 을 100% 로 되돌리는 처리는 ②(col-xl-9 75%)와 충돌한다.
+     850 미만은 gem 기본 col-12(100%)라 별도 처리 불필요. → 블록 제거. */
+
+  /* ② 1200 → 850: 3컬럼(본문 col-xl-9 + 우측 패널 col-xl-3) 전환을
+     350px 당겨 850 부터 적용. Bootstrap 은 1200 에서 켜므로, 850~1199
+     구간에 대해 우리가 같은 폭을 강제한다.
+     (기존 lg=850 경계와 일치 — post 는 좌측 사이드바가 없어 이 자리가
+      비어 있었으므로 우측 패널 전환을 여기에 얹는다.) */
+  @media (min-width: 850px) {
+    main.col-xl-9 {
+      flex: 0 0 75% !important;
+      max-width: 75% !important;
+    }
+    #panel-wrapper.col-xl-3 {
+      display: block !important;
+      flex: 0 0 25% !important;
+      max-width: 25% !important;
+    }
+  }
+
+  /* ③ (구 1400→1050 히어로 inner 패딩 override) — 삭제됨.
+     아래 연속 마진 블록에서 히어로 inner 를 본문과 동일한 clamp 로
+     처리하므로, 고정 패딩 override 는 불필요. */
+
+  /* ============================================================
+     연속적 본문 좌우 마진 — 뷰포트가 아니라 '본문 폭' 기준
+     ------------------------------------------------------------
+     기존 방식(뷰포트 min-width 브레이크포인트로 마진을 단계적으로 주는
+     것)은 사이드바/우측패널 유무마다 경계를 보정해야 했다. 여기서는
+     본문 컨테이너 폭에 마진을 직접 묶어, 레이아웃 구성과 무관하게
+     '본문이 넓어질수록 마진도 연속적으로 늘어나게' 한다.
+
+     구현:
+     - 마진을 줄 요소의 부모를 container 로 지정(container-type:
+       inline-size) → 그 안에서 cqi(container inline size 1%) 사용 가능.
+     - 좌우 패딩을 clamp(하한, 초과분×비율, 상한) 로 준다.
+       마진 = (본문폭 - 시작폭) × 비율.  본문폭 전체 = 100cqi 이므로
+       (100cqi - 시작폭) 이 '시작폭 초과분'. clamp 하한이 시작폭 미만
+       구간(음수)을 잘라 최소 마진으로 고정한다. 브레이크포인트 없음.
+
+     ★ 조정 파라미터(--body-margin-* 를 body:not(.has-sidebar) 스코프에
+       공통 정의 → 본문 article 과 히어로 inner 가 같은 값을 공유한다):
+        --body-margin-start : 이 폭 이하에선 하한(최소)만 적용
+        --body-margin-min   : 하한(좁아도 최소 이만큼)
+        --body-margin-rate  : 시작폭 초과분에 곱하는 비율(클수록 급증)
+        --body-margin-max   : 상한(넓어도 이 이상 안 커짐)
+
+     ★ 기존 패딩은 clamp 로 대체(여백 출처를 clamp 하나로 단일화):
+        - .container / main 의 좌우 패딩은 0.
+        - article 은 px-1 대신 clamp.
+        - 히어로 inner 도 동일 clamp 로 본문과 좌측 시작점을 맞춘다.
+     ============================================================ */
+
+  /* 공통 파라미터 — 본문·히어로가 공유 */
+  --body-margin-start: 28rem;  /* ≈448px: 이 폭 이하에선 하한만 */
+  --body-margin-min: 12px;     /* 하한: 좁아도 최소 이만큼 유지 */
+  --body-margin-rate: 0.15;    /* 초과분의 15% 를 마진으로 (완만) */
+  --body-margin-max: 1.875rem; /* 좌우 각 최대 마진 (30px) */
+
+  main.px-md-4 {
+    /* container query 기준점. 여백 출처를 clamp 하나로 단일화하기 위해
+       main 자체 좌우 패딩(col gutter + px-md-4)은 0 으로 만든다.
+       최소 여백은 clamp 하한이 보장하므로 '전역 여백 증발'은 없다. */
+    container-type: inline-size;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* [768 점프 제거] gem 은 .container 에 lte(md)=max-width:768px 에서
+     좌우 패딩 0, 초과에서 기본 패딩(~0.75rem)을 줘 768 에서 계단식으로
+     여백이 바뀐다. 연속 마진과 충돌하므로 좌우 패딩을 전 구간 0 통일. */
+  #main-wrapper > .container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  main.px-md-4 > article {
+    padding-left: clamp(
+      var(--body-margin-min),
+      calc((100cqi - var(--body-margin-start)) * var(--body-margin-rate)),
+      var(--body-margin-max)
+    ) !important;
+    padding-right: clamp(
+      var(--body-margin-min),
+      calc((100cqi - var(--body-margin-start)) * var(--body-margin-rate)),
+      var(--body-margin-max)
+    ) !important;
+  }
+
+  /* 히어로 좌우 마진: 본문과 완전히 동일한 clamp 를 따라가게 한다.
+     .hux-hero__inner(max-width 1250, 중앙정렬)를 자기 container 로
+     지정해, 본문 main 과 같은 폭 기준(cqi)으로 같은 공식을 적용.
+     → 히어로 제목 좌측 = 본문 좌측이 전 구간 연속적으로 일치한다.
+     (기존 padding:0 1.5rem 및 1050+ 3rem override 를 대체) */
+  .hux-hero__inner {
+    container-type: inline-size;
+    padding-left: clamp(
+      var(--body-margin-min),
+      calc((100cqi - var(--body-margin-start)) * var(--body-margin-rate)),
+      var(--body-margin-max)
+    ) !important;
+    padding-right: clamp(
+      var(--body-margin-min),
+      calc((100cqi - var(--body-margin-start)) * var(--body-margin-rate)),
+      var(--body-margin-max)
+    ) !important;
+  }
 }

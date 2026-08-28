@@ -23,6 +23,7 @@ node_modules
 # Misc
 _sass/vendors
 assets/js/dist
+deno.lock
 
 # Hidden system files
 *~

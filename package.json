@@ -18,6 +18,7 @@
     "build": "concurrently npm:build:*",
     "build:css": "node purgecss.js",
     "build:js": "rollup -c --bundleConfigAsCjs --environment BUILD:production",
+    "dev:netlify": "npm run build:js && bundle exec jekyll serve --port 4000",
     "watch:js": "rollup -c --bundleConfigAsCjs -w",
     "lint:js": "eslint",
     "lint:scss": "stylelint _sass/**/*.scss",
