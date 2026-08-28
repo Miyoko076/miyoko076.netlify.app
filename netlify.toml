@@ -1,9 +1,10 @@
 [build]
-command = "bundle exec jekyll build"
+command = "npm ci && npm run build:js && bundle exec jekyll build"
 publish = "_site"
 
 [build.environment]
 JEKYLL_ENV = "production"
+NODE_VERSION = "22"
 
 [dev]
 command = "bundle exec jekyll serve --port 4000"
