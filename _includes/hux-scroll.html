@@ -1,0 +1,14 @@
+<!--
+  hux-scroll.html
+  ---------------
+  Hux 스타일 통합 스크롤 컨트롤러(헤더<->TOC 연동) 로더.
+  Chirpy 정식 진입점인 script_includes 로 로드되며, gem 의 default.html 이
+  </body> 직전에서 include 한다.
+
+  전역 적용:
+    - default.html 이 script_includes 에 선언 → page/home/tag/tags/
+      categories/archives 등 default 상속 페이지에 상속됨.
+    - post.html 은 자체 script_includes(comment)를 선언해 default 를
+      덮어쓰므로, post.html 에도 hux-scroll 을 명시적으로 추가한다.
+-->
+<script defer src="{{ '/assets/js/hux-scroll.js' | relative_url }}"></script>
