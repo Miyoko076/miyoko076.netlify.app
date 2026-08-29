@@ -202,86 +202,13 @@
     }
   };
 
-  /* ============================================================
-   * HeroSearchSync — 검색 열림/닫힘에 맞춰 히어로 헤더 표시 동기화
-   * ------------------------------------------------------------
-   * [문제] gem 의 검색 로직(search-display.js: ResultSwitch)은 검색이 켜지면
-   *   `#main-wrapper>.container>.row` 요소들에 .d-none 을 붙여 본문을 숨긴다.
-   *   그러나 우리 히어로(.hux-hero)는 full-bleed 를 위해 .row 밖(.container 직속)
-   *   에 두었기에 그 셀렉터에 안 잡혀, 검색 결과 화면에서도 히어로만 남는다.
-   *
-   * [해법] gem 번들/소스는 건드리지 않는다(번들 전 소스라 재빌드가 필요함).
-   *   대신 검색 트리거 요소들은 전부 우리 topbar.html 소유이므로, 여기에 리스너를
-   *   추가로 건다. addEventListener 는 누적되므로 gem 리스너와 공존한다(간섭 없음):
-   *     · gem 핸들러  → 본문 .row 숨김
-   *     · 우리 핸들러 → 히어로 숨김
-   *
-   * [상태 판단] gem 실행 순서에 의존하지 않도록, gem 의 내부 상태를 읽지 않고
-   *   우리 스스로 열림/닫힘을 판단한다(이벤트 기반, 상시 비용 0 — 폴링 아님):
-   *     · #search-trigger 클릭            → 열림(모바일: 아이콘 탭)
-   *     · #search-cancel  클릭            → 닫힘
-   *     · #search-input   입력(값 유무)   → 값 있으면 열림 / 비면 닫힘(데스크톱 경로)
-   *   숨김은 .d-none(Bootstrap display:none)을 토글해 gem 방식과 일치시킨다.
-   *
-   * [안전] 히어로 없는 페이지(.hux-hero 부재)에서는 조용히 no-op.
-   * ============================================================ */
-  var HeroSearchSync = {
-    hero: null,
-
-    setHidden: function (hidden) {
-      if (!this.hero) {
-        return;
-      }
-      this.hero.classList.toggle('d-none', hidden);
-    },
-
-    init: function () {
-      this.hero = document.querySelector('.hux-hero');
-      if (!this.hero) {
-        return; // 히어로 없는 페이지: 아무것도 하지 않는다
-      }
-
-      var trigger = document.getElementById('search-trigger');
-      var cancel = document.getElementById('search-cancel');
-      var input = document.getElementById('search-input');
-      var self = this;
-
-      if (trigger) {
-        trigger.addEventListener('click', function () {
-          self.setHidden(true);
-        });
-      }
-
-      if (cancel) {
-        cancel.addEventListener('click', function () {
-          self.setHidden(false);
-        });
-      }
-
-      if (input) {
-        // gem 의 input 핸들러(search-display.js)와 동일한 분기를 따른다.
-        // gem 은 입력이 비었을 때 isMobileView() 로 갈라 동작한다:
-        //   · 모바일: 검색을 끄지 않는다(힌트만 복원). 검색 종료는 오직 취소 버튼.
-        //   · 데스크톱: ResultSwitch.off() 로 검색을 끈다(입력창이 늘 보이므로).
-        // isMobileView() = 취소 버튼(#search-cancel)이 표시 상태(.d-block)인가.
-        // => 우리도 이 규칙을 그대로 미러링해, 모바일에서 입력만 비웠을 때
-        //    히어로가 되살아나 검색 결과와 겹치는 어긋남을 막는다.
-        input.addEventListener('input', function () {
-          var isMobileView = cancel && cancel.classList.contains('d-block');
-          if (input.value.trim() !== '') {
-            self.setHidden(true); // 입력 있음: 검색 켜짐 → 히어로 숨김
-          } else if (!isMobileView) {
-            self.setHidden(false); // 데스크톱 + 입력 빔: 검색 꺼짐 → 히어로 복원
-          }
-          // 모바일 + 입력 빔: 검색 유지 → 히어로 계속 숨김(아무것도 안 함)
-        });
-      }
-    }
-  };
+  /* HeroSearchSync 제거됨.
+     검색 열림/닫힘 시 히어로 숨김/복원은 이제 gem 소스인
+     search-display.js 의 ResultSwitch.on()/off() 에서 본문(.row)과 함께
+     직접 처리한다. (이중 리스너 + isMobileView 미러링 부채를 없앴다.) */
 
   function initAll() {
     ScrollController.init();
-    HeroSearchSync.init();
   }
 
   if (document.readyState === 'loading') {
