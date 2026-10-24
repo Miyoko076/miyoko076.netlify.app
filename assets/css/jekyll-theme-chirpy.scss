@@ -817,3 +817,19 @@ body:not(.has-sidebar) {
     ) !important;
   }
 }
+
+/* 토글 제목: ▶를 요약줄 바깥에 두고, ▶ 폭(1em)만큼 자리 확보 */
+.content summary:has(> :is(h1, h2, h3, h4, h5, h6)) {
+  list-style-position: outside;
+  margin-left: 1em;
+}
+
+/* 닫힌 토글의 숨은 본문 상자를 흐름에서 빼서, 제목 아래 여백이 갇히지 않게 */
+.content details:not([open])::details-content {
+  position: absolute;
+}
+
+/* 토글 들여쓰기: 요약줄은 제자리, 펼친 내용만 안쪽으로 */
+.content details > :not(summary) {
+  margin-left: 1.7rem;
+}
