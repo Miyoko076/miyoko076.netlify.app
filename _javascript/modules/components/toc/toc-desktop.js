@@ -3,7 +3,8 @@ export class TocDesktop {
   static options = {
     tocSelector: '#toc',
     contentSelector: '.content',
-    ignoreSelector: '[data-toc-skip]',
+    // Headings in quotes and callouts stay out of the TOC; of headings in toggles, only top-level toggle titles go in.
+    ignoreSelector: '[data-toc-skip], blockquote *, details :not(.content > details > summary *)',
     headingSelector: 'h2, h3, h4',
     orderedList: false,
     scrollSmooth: false,
