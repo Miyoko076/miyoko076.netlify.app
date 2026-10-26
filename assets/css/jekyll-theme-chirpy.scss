@@ -719,13 +719,15 @@ body:not(.has-sidebar) {
       비어 있었으므로 우측 패널 전환을 여기에 얹는다.) */
   @media (min-width: 850px) {
     main.col-xl-9 {
-      flex: 0 0 75% !important;
-      max-width: 75% !important;
+      flex: 1 1 0 !important;
+      min-width: 0;
+      max-width: none !important;
     }
+    /* 우측 패널(TOC)은 25% 를 따르되 최대 250px. 남는 폭은 본문이 가져간다. */
     #panel-wrapper.col-xl-3 {
       display: block !important;
-      flex: 0 0 25% !important;
-      max-width: 25% !important;
+      flex: 0 0 min(25%, 250px) !important;
+      max-width: 250px !important;
     }
   }
 
