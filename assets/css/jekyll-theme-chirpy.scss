@@ -859,3 +859,17 @@ body:not(.has-sidebar) {
   width: -moz-available;
   width: stretch;
 }
+
+/* 프롬프트(콜아웃): 제목·코드로 시작하거나 끝나도 아이콘 높이에 맞도록 첫·마지막 블록 바깥 여백 제거 */
+.content blockquote[class^='prompt-'] > :first-child {
+  margin-top: 0;
+}
+
+.content blockquote[class^='prompt-'] > :last-child {
+  margin-bottom: 0;
+}
+
+/* 본문 없는 프롬프트도 위아래 안쪽 여백(1rem씩) + 글자 한 줄 높이를 유지해 아이콘이 상자 밖으로 나가지 않게 */
+.content blockquote[class^='prompt-'] {
+  min-height: calc(2rem + 1lh);
+}
