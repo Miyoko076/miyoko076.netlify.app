@@ -841,3 +841,21 @@ body:not(.has-sidebar) {
   margin-top: 1rem;
   margin-bottom: 1rem;
 }
+
+/* 본문 iframe(유튜브·임베드)·video 를 Chirpy 임베드 규칙에 맞춤: iframe 은 16:9 전체폭, video 는 파일 규칙 */
+.content iframe {
+  @extend .embed-video;
+}
+
+.content video {
+  @extend .embed-video;
+  @extend .file;
+}
+
+/* 폭 100% 대신 '여백을 뺀 나머지'를 채워, 토글 들여쓰기 등 여백이 있어도 삐져나오지 않게 */
+.content iframe,
+.content video {
+  width: -webkit-fill-available;
+  width: -moz-available;
+  width: stretch;
+}
