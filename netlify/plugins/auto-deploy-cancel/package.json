@@ -1,0 +1,17 @@
+{
+  "name": "auto-deploy-cancel",
+  "version": "1.0.0",
+  "description": "Cancel Netlify builds started automatically by Git pushes, while letting build hook and manual deploys through",
+  "author": "Miyoko076 <miyoko076@inbox.lv>",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "manifest.yml"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

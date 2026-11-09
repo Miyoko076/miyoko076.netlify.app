@@ -227,6 +227,7 @@ exclude:
   - "package*.json"
   - node_modules
   - _javascript
+  - netlify
 
 jekyll-archives:
   enabled: [categories, tags]
